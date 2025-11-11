@@ -1,12 +1,108 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, CheckCircle2, Clock, Shield } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const userRole = localStorage.getItem("userRole");
+    if (userRole) {
+      navigate(userRole === "admin" ? "/admin" : "/dashboard");
+    }
+  }, [navigate]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="Brototype" className="h-10 w-10" />
+            <h1 className="text-xl font-bold">Complaint Management Portal</h1>
+          </div>
+          <Button onClick={() => navigate("/login")}>Sign In</Button>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-16">
+        <div className="max-w-4xl mx-auto text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            Streamlined Complaint Management
+          </h2>
+          <p className="text-xl text-muted-foreground mb-8">
+            A professional portal for Brototype students and administrators to efficiently track,
+            manage, and resolve issues.
+          </p>
+          <Button size="lg" onClick={() => navigate("/login")}>
+            Get Started
+          </Button>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 mb-16">
+          <Card>
+            <CardHeader>
+              <AlertCircle className="h-10 w-10 mb-4" />
+              <CardTitle>Submit Complaints</CardTitle>
+              <CardDescription>
+                Easily report technical, infrastructure, or behavioral issues with detailed descriptions
+                and attachments.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Clock className="h-10 w-10 mb-4" />
+              <CardTitle>Track Progress</CardTitle>
+              <CardDescription>
+                Monitor the status of your complaints in real-time from Open to In Progress to Resolved.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CheckCircle2 className="h-10 w-10 mb-4" />
+              <CardTitle>Quick Resolution</CardTitle>
+              <CardDescription>
+                Administrators can efficiently manage and resolve complaints with status updates and
+                remarks.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-4">
+              <Shield className="h-8 w-8" />
+              <CardTitle className="text-2xl">Secure & Efficient</CardTitle>
+            </div>
+            <CardDescription className="text-base">
+              Built with enterprise-grade security and designed for optimal workflow. All users must
+              authenticate with their @brototype.com email address to ensure data privacy and proper
+              access control.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p>✓ Role-based access control (Student / Admin)</p>
+              <p>✓ Email notifications on status updates</p>
+              <p>✓ Comprehensive complaint categorization</p>
+              <p>✓ Full audit trail with status history</p>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+
+      <footer className="border-t mt-16">
+        <div className="container mx-auto px-4 py-8 text-center text-sm text-muted-foreground">
+          <p>© 2025 Brototype. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 };
