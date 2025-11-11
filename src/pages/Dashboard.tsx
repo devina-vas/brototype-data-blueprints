@@ -1,54 +1,77 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, LogOut, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 type Complaint = {
   id: string;
   title: string;
   category: string;
-  status: "Open" | "In Progress" | "Resolved";
+  status: string;
   created_at: string;
   description: string;
+  student_id: string;
+  attachment_url: string | null;
+  priority: string;
+  updated_at: string;
+  resolved_by: string | null;
+  admin_remarks: string | null;
 };
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const userEmail = localStorage.getItem("userEmail");
+  const { user, signOut } = useAuth();
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [complaints] = useState<Complaint[]>([
-    {
-      id: "c101",
-      title: "Wi-Fi Not Working",
-      category: "Infrastructure",
-      status: "In Progress",
-      created_at: "2025-11-11T11:00:00Z",
-      description: "The Wi-Fi in Lab 2 is down since morning.",
-    },
-    {
-      id: "c102",
-      title: "Projector Issue",
-      category: "Technical",
-      status: "Open",
-      created_at: "2025-11-10T14:30:00Z",
-      description: "Projector in room A1 is not displaying properly.",
-    },
-    {
-      id: "c103",
-      title: "AC Temperature",
-      category: "Infrastructure",
-      status: "Resolved",
-      created_at: "2025-11-09T09:15:00Z",
-      description: "AC is too cold in the main hall.",
-    },
-  ]);
+  useEffect(() => {
+    fetchComplaints();
+    
+    const channel = supabase
+      .channel('complaints-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'complaints',
+          filter: `student_id=eq.${user?.id}`
+        },
+        () => {
+          fetchComplaints();
+        }
+      )
+      .subscribe();
 
-  const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userEmail");
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const fetchComplaints = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setComplaints(data || []);
+    } catch (error: any) {
+      toast.error("Failed to load complaints");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
     navigate("/login");
   };
 
@@ -86,7 +109,7 @@ const Dashboard = () => {
             <img src={logo} alt="Brototype" className="h-10 w-10" />
             <div>
               <h1 className="text-xl font-bold">Complaint Portal</h1>
-              <p className="text-sm text-muted-foreground">{userEmail}</p>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
           <Button variant="outline" onClick={handleLogout}>
@@ -109,7 +132,13 @@ const Dashboard = () => {
         </div>
 
         <div className="grid gap-4">
-          {complaints.length === 0 ? (
+          {loading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <p className="text-muted-foreground">Loading complaints...</p>
+              </CardContent>
+            </Card>
+          ) : complaints.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />

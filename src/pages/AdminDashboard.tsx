@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,73 +7,127 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { LogOut, AlertCircle, CheckCircle2, Clock, Users, FileText, TrendingUp } from "lucide-react";
+import { LogOut, AlertCircle, CheckCircle2, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
-type Complaint = {
+type ComplaintWithProfile = {
   id: string;
   title: string;
   category: string;
-  status: "Open" | "In Progress" | "Resolved";
+  status: string;
   created_at: string;
   description: string;
+  student_id: string;
   student_email: string;
 };
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [complaints, setComplaints] = useState<Complaint[]>([
-    {
-      id: "c101",
-      title: "Wi-Fi Not Working",
-      category: "Infrastructure",
-      status: "In Progress",
-      created_at: "2025-11-11T11:00:00Z",
-      description: "The Wi-Fi in Lab 2 is down since morning.",
-      student_email: "devina@brototype.com",
-    },
-    {
-      id: "c102",
-      title: "Projector Issue",
-      category: "Technical",
-      status: "Open",
-      created_at: "2025-11-10T14:30:00Z",
-      description: "Projector in room A1 is not displaying properly.",
-      student_email: "john@brototype.com",
-    },
-    {
-      id: "c103",
-      title: "AC Temperature",
-      category: "Infrastructure",
-      status: "Resolved",
-      created_at: "2025-11-09T09:15:00Z",
-      description: "AC is too cold in the main hall.",
-      student_email: "sarah@brototype.com",
-    },
-  ]);
-
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const { user, signOut } = useAuth();
+  const [complaints, setComplaints] = useState<ComplaintWithProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedComplaint, setSelectedComplaint] = useState<ComplaintWithProfile | null>(null);
   const [newStatus, setNewStatus] = useState("");
   const [remarks, setRemarks] = useState("");
 
-  const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userEmail");
+  useEffect(() => {
+    fetchComplaints();
+    
+    const channel = supabase
+      .channel('admin-complaints-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'complaints'
+        },
+        () => {
+          fetchComplaints();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchComplaints = async () => {
+    try {
+      const { data: complaintsData, error: complaintsError } = await supabase
+        .from('complaints')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (complaintsError) throw complaintsError;
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email');
+
+      if (profilesError) throw profilesError;
+
+      const profileMap = new Map(profilesData?.map(p => [p.id, p.email]) || []);
+      
+      const complaintsWithEmail = complaintsData?.map(c => ({
+        ...c,
+        student_email: profileMap.get(c.student_id) || 'Unknown'
+      })) || [];
+      
+      setComplaints(complaintsWithEmail);
+    } catch (error: any) {
+      toast.error("Failed to load complaints");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
     navigate("/login");
   };
 
-  const handleUpdateStatus = () => {
-    if (selectedComplaint && newStatus) {
-      setComplaints((prev) =>
-        prev.map((c) =>
-          c.id === selectedComplaint.id ? { ...c, status: newStatus as any } : c
-        )
-      );
+  const handleUpdateStatus = async () => {
+    if (!selectedComplaint || !newStatus) return;
+
+    try {
+      const oldStatus = selectedComplaint.status;
+
+      const { error: updateError } = await supabase
+        .from('complaints')
+        .update({ 
+          status: newStatus,
+          admin_remarks: remarks || null,
+          resolved_by: newStatus === 'Resolved' ? user?.id : null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedComplaint.id);
+
+      if (updateError) throw updateError;
+
+      const { error: historyError } = await supabase
+        .from('status_history')
+        .insert({
+          complaint_id: selectedComplaint.id,
+          updated_by: user?.id,
+          old_status: oldStatus,
+          new_status: newStatus,
+          remarks: remarks || null
+        });
+
+      if (historyError) throw historyError;
+
       toast.success("Complaint status updated successfully!");
       setSelectedComplaint(null);
       setNewStatus("");
       setRemarks("");
+      fetchComplaints();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update complaint");
     }
   };
 
@@ -171,7 +225,19 @@ const AdminDashboard = () => {
         <h2 className="text-2xl font-bold mb-6">All Complaints</h2>
 
         <div className="grid gap-4">
-          {complaints.map((complaint) => (
+          {loading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <p className="text-muted-foreground">Loading complaints...</p>
+              </CardContent>
+            </Card>
+          ) : complaints.length === 0 ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <p className="text-muted-foreground">No complaints found</p>
+              </CardContent>
+            </Card>
+          ) : complaints.map((complaint) => (
             <Card key={complaint.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">

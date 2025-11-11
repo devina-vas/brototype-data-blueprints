@@ -9,9 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const NewComplaint = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -19,14 +22,39 @@ const NewComplaint = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast.error("You must be logged in to submit a complaint");
+      return;
+    }
+
+    if (!category) {
+      toast.error("Please select a category");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Mock submission
-    setTimeout(() => {
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .insert({
+          student_id: user.id,
+          title,
+          category,
+          description,
+          status: 'Open'
+        });
+
+      if (error) throw error;
+
       toast.success("Complaint submitted successfully!");
       navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit complaint");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
