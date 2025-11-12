@@ -22,6 +22,9 @@ type ComplaintWithProfile = {
   description: string;
   student_id: string;
   student_email: string;
+  attachment_url: string | null;
+  admin_remarks: string | null;
+  priority: string;
 };
 
 const AdminDashboard = () => {
@@ -250,6 +253,18 @@ const AdminDashboard = () => {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">{complaint.description}</p>
+                    {complaint.attachment_url && (
+                      <div className="mt-2">
+                        <a 
+                          href={complaint.attachment_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline flex items-center gap-1"
+                        >
+                          📎 View Attachment
+                        </a>
+                      </div>
+                    )}
                   </div>
                   <Dialog>
                     <DialogTrigger asChild>
@@ -303,7 +318,7 @@ const AdminDashboard = () => {
                   <span>•</span>
                   <span>{complaint.student_email}</span>
                   <span>•</span>
-                  <span className="text-primary">ID: {complaint.id}</span>
+                  <span className="text-primary">ID: {complaint.id.slice(0, 8)}</span>
                 </div>
               </CardContent>
             </Card>

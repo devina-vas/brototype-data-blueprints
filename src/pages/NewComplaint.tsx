@@ -18,6 +18,7 @@ const NewComplaint = () => {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,6 +37,26 @@ const NewComplaint = () => {
     setIsLoading(true);
 
     try {
+      let attachmentUrl = null;
+
+      // Upload attachment if provided
+      if (attachment) {
+        const fileExt = attachment.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('complaints')
+          .upload(fileName, attachment);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('complaints')
+          .getPublicUrl(fileName);
+        
+        attachmentUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from('complaints')
         .insert({
@@ -43,6 +64,7 @@ const NewComplaint = () => {
           title,
           category,
           description,
+          attachment_url: attachmentUrl,
           status: 'Open'
         });
 
@@ -121,7 +143,12 @@ const NewComplaint = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="attachment">Attachment (Optional)</Label>
-                <Input id="attachment" type="file" accept="image/*,.pdf" />
+                <Input 
+                  id="attachment" 
+                  type="file" 
+                  accept="image/*,.pdf" 
+                  onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                />
                 <p className="text-sm text-muted-foreground">
                   Upload screenshots or relevant documents (Max 5MB)
                 </p>
