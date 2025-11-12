@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +16,7 @@ const Login = () => {
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<"admin" | "student">("student");
 
   useEffect(() => {
     if (user && role) {
@@ -66,22 +66,55 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-4 text-center">
-          <div className="flex justify-center">
-            <img src={logo} alt="Brototype" className="h-16 w-16" />
+    <div className="min-h-screen bg-black flex items-center justify-center p-4 dark">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center">
+            <img src={logo} alt="Brototype" className="h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>
-            Sign in to your Brototype account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <h1 className="text-white text-xl font-medium">Brototype Complaint Management Portal</h1>
+        </div>
+
+        {/* Login Card */}
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-8 shadow-[0_0_20px_rgba(255,255,255,0.1)] border border-white/10">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Role Selection */}
+            <div className="space-y-3">
+              <Label className="text-white text-base">Login as:</Label>
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="admin"
+                    checked={selectedRole === "admin"}
+                    onChange={() => setSelectedRole("admin")}
+                    className="w-4 h-4 accent-white"
+                  />
+                  <span className="text-white">Admin</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="student"
+                    checked={selectedRole === "student"}
+                    onChange={() => setSelectedRole("student")}
+                    className="w-4 h-4 accent-white"
+                  />
+                  <span className="text-white">Student</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-white/20"></div>
+
+            {/* Name field for signup */}
             {isSignup && (
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name" className="text-white/70 text-sm">Name</Label>
                 <Input
                   id="name"
                   type="text"
@@ -89,11 +122,14 @@ const Login = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:bg-white/15 focus:border-white/40"
                 />
               </div>
             )}
+
+            {/* Email/Username Field */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white/70 text-sm">Username / Email:</Label>
               <Input
                 id="email"
                 type="email"
@@ -101,10 +137,13 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:bg-white/15 focus:border-white/40"
               />
             </div>
+
+            {/* Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-white/70 text-sm">Password:</Label>
               <Input
                 id="password"
                 type="password"
@@ -113,23 +152,32 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:bg-white/15 focus:border-white/40"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (isSignup ? "Creating account..." : "Signing in...") : (isSignup ? "Sign Up" : "Sign In")}
-            </Button>
-          </form>
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => setIsSignup(!isSignup)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+
+            {/* Login Button */}
+            <Button 
+              type="submit" 
+              className="w-full bg-white text-black hover:bg-black hover:text-white hover:border hover:border-white transition-all duration-300 font-semibold h-12 text-base rounded-lg" 
+              disabled={isLoading}
             >
-              {isSignup ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
-            </button>
-          </div>
-        </CardContent>
-      </Card>
+              {isLoading ? (isSignup ? "Creating account..." : "Signing in...") : "Login"}
+            </Button>
+
+            {/* Toggle Sign Up/Sign In */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setIsSignup(!isSignup)}
+                className="text-sm text-white/60 hover:text-white transition-colors"
+              >
+                {isSignup ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };
