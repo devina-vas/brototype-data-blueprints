@@ -3,12 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
-import { LogOut, AlertCircle, CheckCircle2, Clock, FileText, Download, ExternalLink } from "lucide-react";
+import { LogOut, AlertCircle, CheckCircle2, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,24 +24,11 @@ type ComplaintWithProfile = {
   priority: string;
 };
 
-type StatusHistory = {
-  id: string;
-  old_status: string;
-  new_status: string;
-  remarks: string | null;
-  updated_at: string;
-};
-
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [complaints, setComplaints] = useState<ComplaintWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedComplaint, setSelectedComplaint] = useState<ComplaintWithProfile | null>(null);
-  const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
-  const [newStatus, setNewStatus] = useState("");
-  const [remarks, setRemarks] = useState("");
-  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 
   useEffect(() => {
     fetchComplaints();
@@ -110,67 +92,8 @@ const AdminDashboard = () => {
     navigate("/login");
   };
 
-  const fetchStatusHistory = async (complaintId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('status_history')
-        .select('*')
-        .eq('complaint_id', complaintId)
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-      setStatusHistory(data || []);
-    } catch (error: any) {
-      toast.error("Failed to load status history");
-    }
-  };
-
   const handleComplaintClick = (complaint: ComplaintWithProfile) => {
-    setSelectedComplaint(complaint);
-    fetchStatusHistory(complaint.id);
-  };
-
-  const handleUpdateStatus = async () => {
-    if (!selectedComplaint || !newStatus) return;
-
-    try {
-      const oldStatus = selectedComplaint.status;
-
-      const { error: updateError } = await supabase
-        .from('complaints')
-        .update({ 
-          status: newStatus,
-          admin_remarks: remarks || null,
-          resolved_by: newStatus === 'Resolved' ? user?.id : null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedComplaint.id);
-
-      if (updateError) throw updateError;
-
-      const { error: historyError } = await supabase
-        .from('status_history')
-        .insert({
-          complaint_id: selectedComplaint.id,
-          updated_by: user?.id,
-          old_status: oldStatus,
-          new_status: newStatus,
-          remarks: remarks || null
-        });
-
-      if (historyError) throw historyError;
-
-      toast.success("Complaint status updated successfully!");
-      setShowUpdateDialog(false);
-      setNewStatus("");
-      setRemarks("");
-      fetchComplaints();
-      if (selectedComplaint) {
-        fetchStatusHistory(selectedComplaint.id);
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update complaint");
-    }
+    navigate(`/admin/complaint/${complaint.id}`);
   };
 
   const stats = {
@@ -314,156 +237,6 @@ const AdminDashboard = () => {
           ))}
         </div>
       </main>
-
-      {/* Detailed Complaint View Sheet */}
-      <Sheet open={!!selectedComplaint} onOpenChange={(open) => !open && setSelectedComplaint(null)}>
-        <SheetContent className="sm:max-w-2xl overflow-y-auto">
-          {selectedComplaint && (
-            <>
-              <SheetHeader>
-                <div className="flex items-center justify-between">
-                  <SheetTitle className="text-2xl">{selectedComplaint.title}</SheetTitle>
-                  <Badge variant={getStatusVariant(selectedComplaint.status)} className="flex items-center gap-1">
-                    {getStatusIcon(selectedComplaint.status)}
-                    {selectedComplaint.status}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
-                  <span className="font-medium">{selectedComplaint.category}</span>
-                  <span>•</span>
-                  <span>Submitted {new Date(selectedComplaint.created_at).toLocaleDateString()}</span>
-                </div>
-              </SheetHeader>
-
-              <div className="mt-6 space-y-6">
-                {/* Student Information */}
-                <div>
-                  <h3 className="text-sm font-semibold mb-2">Student Information</h3>
-                  <div className="space-y-1 text-sm">
-                    <p className="text-foreground">{selectedComplaint.student_name}</p>
-                    <p className="text-muted-foreground">{selectedComplaint.student_email}</p>
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div>
-                  <h3 className="text-sm font-semibold mb-2">Description</h3>
-                  <p className="text-sm text-muted-foreground">{selectedComplaint.description}</p>
-                </div>
-
-                {/* Attachment */}
-                {selectedComplaint.attachment_url && (
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">Attachment</h3>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(selectedComplaint.attachment_url!, '_blank')}
-                        className="flex items-center gap-2"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        View Attachment
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = selectedComplaint.attachment_url!;
-                          link.download = 'attachment';
-                          link.click();
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <Download className="h-4 w-4" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Status History */}
-                <div>
-                  <h3 className="text-sm font-semibold mb-3">Status History</h3>
-                  <div className="space-y-2">
-                    {statusHistory.length > 0 ? (
-                      statusHistory.map((history) => (
-                        <div key={history.id} className="flex items-start gap-3 text-sm">
-                          <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {history.new_status}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(history.updated_at).toLocaleString()}
-                              </span>
-                            </div>
-                            {history.remarks && (
-                              <p className="text-muted-foreground mt-1">{history.remarks}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No status updates yet</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Update Status Button */}
-                <Button 
-                  onClick={() => setShowUpdateDialog(true)} 
-                  className="w-full"
-                >
-                  Update Status
-                </Button>
-              </div>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {/* Update Status Dialog */}
-      <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Complaint Status</DialogTitle>
-            <DialogDescription>
-              Change the status and add resolution notes
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={newStatus} onValueChange={setNewStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Open">Open</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Resolved">Resolved</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Admin Note</Label>
-              <Textarea
-                placeholder="Add resolution notes or updates..."
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                rows={3}
-              />
-              <p className="text-xs text-muted-foreground">0/{remarks.length} characters</p>
-            </div>
-            <Button onClick={handleUpdateStatus} className="w-full">
-              Save Changes
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
