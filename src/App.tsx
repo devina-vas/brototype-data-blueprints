@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import NewComplaint from "./pages/NewComplaint";
 import AdminDashboard from "./pages/AdminDashboard";
+import ComplaintDetails from "./pages/ComplaintDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,11 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute requiredRole="admin">
                 <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/complaint/:id" element={
+              <ProtectedRoute requiredRole="admin">
+                <ComplaintDetails />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

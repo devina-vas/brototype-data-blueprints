@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, LogOut, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { Plus, LogOut, AlertCircle, CheckCircle2, Clock, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,11 +26,21 @@ type Complaint = {
   admin_remarks: string | null;
 };
 
+type StatusHistory = {
+  id: string;
+  old_status: string;
+  new_status: string;
+  remarks: string | null;
+  updated_at: string;
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
 
   useEffect(() => {
     fetchComplaints();
@@ -102,6 +113,23 @@ const Dashboard = () => {
     }
   };
 
+  const handleViewStatus = async (complaint: Complaint) => {
+    setSelectedComplaint(complaint);
+    
+    try {
+      const { data, error } = await supabase
+        .from('status_history')
+        .select('*')
+        .eq('complaint_id', complaint.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      setStatusHistory(data || []);
+    } catch (error: any) {
+      toast.error("Failed to load status history");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -168,12 +196,22 @@ const Dashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="font-medium">{complaint.category}</span>
-                    <span>•</span>
-                    <span>{new Date(complaint.created_at).toLocaleDateString()}</span>
-                    <span>•</span>
-                    <span className="text-primary">ID: {complaint.id}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span className="font-medium">{complaint.category}</span>
+                      <span>•</span>
+                      <span>{new Date(complaint.created_at).toLocaleDateString()}</span>
+                      <span>•</span>
+                      <span className="text-primary">ID: {complaint.id.slice(0, 8)}</span>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewStatus(complaint)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Check Status
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -181,6 +219,100 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+
+      {/* Status Details Dialog */}
+      <Dialog open={!!selectedComplaint} onOpenChange={(open) => !open && setSelectedComplaint(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          {selectedComplaint && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl">{selectedComplaint.title}</DialogTitle>
+                <DialogDescription>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Badge variant={getStatusVariant(selectedComplaint.status)} className="flex items-center gap-1">
+                      {getStatusIcon(selectedComplaint.status)}
+                      {selectedComplaint.status}
+                    </Badge>
+                    <span>•</span>
+                    <span>{selectedComplaint.category}</span>
+                    <span>•</span>
+                    <span>ID: {selectedComplaint.id.slice(0, 8)}</span>
+                  </div>
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 mt-4">
+                {/* Description */}
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Description</h3>
+                  <p className="text-sm text-muted-foreground">{selectedComplaint.description}</p>
+                </div>
+
+                {/* Attachment Preview */}
+                {selectedComplaint.attachment_url && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Attachment</h3>
+                    {selectedComplaint.attachment_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                      <img 
+                        src={selectedComplaint.attachment_url} 
+                        alt="Complaint attachment" 
+                        className="max-w-full h-auto rounded-lg border"
+                      />
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(selectedComplaint.attachment_url!, '_blank')}
+                      >
+                        View Attachment
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {/* Admin Remarks */}
+                {selectedComplaint.admin_remarks && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Admin Notes</h3>
+                    <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+                      <p className="text-sm">{selectedComplaint.admin_remarks}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Status History */}
+                <div>
+                  <h3 className="text-sm font-semibold mb-3">Status History</h3>
+                  <div className="space-y-3">
+                    {statusHistory.length > 0 ? (
+                      statusHistory.map((history) => (
+                        <div key={history.id} className="flex items-start gap-3 pb-3 border-b last:border-0">
+                          <Clock className="h-4 w-4 text-muted-foreground mt-1" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline" className="text-xs">
+                                {history.new_status}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(history.updated_at).toLocaleString()}
+                              </span>
+                            </div>
+                            {history.remarks && (
+                              <p className="text-sm text-muted-foreground">{history.remarks}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No status updates yet</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
