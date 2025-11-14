@@ -30,7 +30,7 @@ const Index = () => {
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Efficient Complaint System
+            BroCamp Solutions
           </h2>
           <p className="text-xl text-muted-foreground mb-8">
             A professional portal for Brototype students and admins to track,
@@ -46,10 +46,6 @@ const Index = () => {
             <CardHeader>
               <AlertCircle className="h-10 w-10 mb-4" />
               <CardTitle>Submit Complaints</CardTitle>
-              <CardDescription>
-                Easily report technical, infrastructure, or behavioral issues with detailed descriptions
-                and attachments.
-              </CardDescription>
             </CardHeader>
           </Card>
 
@@ -57,9 +53,6 @@ const Index = () => {
             <CardHeader>
               <Clock className="h-10 w-10 mb-4" />
               <CardTitle>Track Progress</CardTitle>
-              <CardDescription>
-                Monitor the status of your complaints in real-time from Open to In Progress to Resolved.
-              </CardDescription>
             </CardHeader>
           </Card>
 
@@ -67,10 +60,6 @@ const Index = () => {
             <CardHeader>
               <CheckCircle2 className="h-10 w-10 mb-4" />
               <CardTitle>Quick Resolution</CardTitle>
-              <CardDescription>
-                Administrators can efficiently manage and resolve complaints with status updates and
-                remarks.
-              </CardDescription>
             </CardHeader>
           </Card>
         </div>
@@ -82,17 +71,9 @@ const Index = () => {
               <CardTitle className="text-2xl">Secure & Fast</CardTitle>
             </div>
             <CardDescription className="text-base">
-              Built with enterprise security and optimized workflow. Authenticate with your @brototype.com email for secure access control.
+              Authenticate with your @brototype.com email for secure access control.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p>✓ Role-based access control</p>
-              <p>✓ Email notifications</p>
-              <p>✓ Complete categorization</p>
-              <p>✓ Full audit trail</p>
-            </div>
-          </CardContent>
         </Card>
       </main>
 
