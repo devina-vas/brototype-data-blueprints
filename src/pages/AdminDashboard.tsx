@@ -70,16 +70,17 @@ const AdminDashboard = () => {
 
       const profileMap = new Map(profilesData?.map(p => [p.id, { email: p.email, name: p.name }]) || []);
       
-      const complaintsWithEmail = complaintsData?.map(c => {
+      const complaintsWithProfile = complaintsData?.map(c => {
         const profile = profileMap.get(c.student_id);
+        const firstName = profile?.name?.split(' ')[0] || 'Student';
         return {
           ...c,
           student_email: profile?.email || 'Unknown',
-          student_name: profile?.name || 'Unknown'
+          student_name: firstName
         };
       }) || [];
       
-      setComplaints(complaintsWithEmail);
+      setComplaints(complaintsWithProfile);
     } catch (error: any) {
       toast.error("Failed to load complaints");
     } finally {

@@ -58,24 +58,30 @@ const ComplaintDetails = () => {
         .from('complaints')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (complaintError) throw complaintError;
+      if (!complaintData) {
+        toast.error("Complaint not found");
+        navigate("/admin");
+        return;
+      }
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('email, name')
         .eq('id', complaintData.student_id)
-        .single();
+        .maybeSingle();
 
       if (profileError) throw profileError;
 
       setComplaint({
         ...complaintData,
-        student_email: profileData.email,
-        student_name: profileData.name
+        student_email: profileData?.email || 'Unknown',
+        student_name: profileData?.name || 'Unknown'
       });
     } catch (error: any) {
+      console.error("Error loading complaint:", error);
       toast.error("Failed to load complaint details");
       navigate("/admin");
     } finally {
@@ -127,6 +133,23 @@ const ComplaintDetails = () => {
         });
 
       if (historyError) throw historyError;
+
+      // Send email notification to student
+      try {
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            type: 'status_updated',
+            studentEmail: complaint.student_email,
+            studentName: complaint.student_name,
+            complaintTitle: complaint.title,
+            complaintId: complaint.id,
+            status: newStatus,
+            adminRemarks: remarks || undefined
+          }
+        });
+      } catch (emailError) {
+        console.error("Failed to send email:", emailError);
+      }
 
       toast.success("Status updated successfully");
       setShowUpdateDialog(false);

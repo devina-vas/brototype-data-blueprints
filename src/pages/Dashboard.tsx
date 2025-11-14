@@ -41,9 +41,13 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
+  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
-    fetchComplaints();
+    if (user) {
+      fetchUserProfile();
+      fetchComplaints();
+    }
     
     const channel = supabase
       .channel('complaints-changes')
@@ -65,6 +69,22 @@ const Dashboard = () => {
       supabase.removeChannel(channel);
     };
   }, [user]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user?.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        setUserName(data.name);
+      }
+    } catch (error) {
+      console.error("Failed to load user profile:", error);
+    }
+  };
 
   const fetchComplaints = async () => {
     try {
@@ -138,7 +158,7 @@ const Dashboard = () => {
             <img src={logo} alt="Brototype" className="h-10 w-10" />
             <div>
               <h1 className="text-xl font-bold">Complaint Portal</h1>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <p className="text-sm text-muted-foreground">Hi {userName || user?.email}!</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
