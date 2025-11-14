@@ -30,11 +30,11 @@ const Index = () => {
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Streamlined Complaint Management
+            Efficient Complaint System
           </h2>
           <p className="text-xl text-muted-foreground mb-8">
-            A professional portal for Brototype students and administrators to efficiently track,
-            manage, and resolve issues.
+            A professional portal for Brototype students and admins to track,
+            manage, and resolve issues seamlessly.
           </p>
           <Button size="lg" onClick={() => navigate("/login")}>
             Get Started
@@ -79,20 +79,18 @@ const Index = () => {
           <CardHeader>
             <div className="flex items-center gap-3 mb-4">
               <Shield className="h-8 w-8" />
-              <CardTitle className="text-2xl">Secure & Efficient</CardTitle>
+              <CardTitle className="text-2xl">Secure & Fast</CardTitle>
             </div>
             <CardDescription className="text-base">
-              Built with enterprise-grade security and designed for optimal workflow. All users must
-              authenticate with their @brototype.com email address to ensure data privacy and proper
-              access control.
+              Built with enterprise security and optimized workflow. Authenticate with your @brototype.com email for secure access control.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>✓ Role-based access control (Student / Admin)</p>
-              <p>✓ Email notifications on status updates</p>
-              <p>✓ Comprehensive complaint categorization</p>
-              <p>✓ Full audit trail with status history</p>
+              <p>✓ Role-based access control</p>
+              <p>✓ Email notifications</p>
+              <p>✓ Complete categorization</p>
+              <p>✓ Full audit trail</p>
             </div>
           </CardContent>
         </Card>
