@@ -229,7 +229,7 @@ const AdminDashboard = () => {
                   <span>•</span>
                   <span>{new Date(complaint.created_at).toLocaleDateString()}</span>
                   <span>•</span>
-                  <span>{complaint.student_email}</span>
+                  <span>{complaint.student_name}</span>
                   <span>•</span>
                   <span className="text-primary">ID: {complaint.id.slice(0, 8)}</span>
                 </div>
