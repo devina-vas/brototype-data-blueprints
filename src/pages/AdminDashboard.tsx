@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, AlertCircle, CheckCircle2, Clock, FileText } from "lucide-react";
+import { LogOut, AlertCircle, CheckCircle2, Clock, FileText, TrendingUp, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 type ComplaintWithProfile = {
   id: string;
@@ -72,11 +73,10 @@ const AdminDashboard = () => {
       
       const complaintsWithProfile = complaintsData?.map(c => {
         const profile = profileMap.get(c.student_id);
-        const firstName = profile?.name?.split(' ')[0] || 'Student';
         return {
           ...c,
           student_email: profile?.email || 'Unknown',
-          student_name: firstName
+          student_name: profile?.name || 'Unknown'
         };
       }) || [];
       
@@ -103,6 +103,25 @@ const AdminDashboard = () => {
     inProgress: complaints.filter((c) => c.status === "In Progress").length,
     resolved: complaints.filter((c) => c.status === "Resolved").length,
   };
+
+  const categoryData = complaints.reduce((acc, complaint) => {
+    const category = complaint.category;
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const chartCategoryData = Object.entries(categoryData).map(([name, value]) => ({
+    name,
+    value,
+  }));
+
+  const statusChartData = [
+    { name: "Open", value: stats.open, color: "hsl(var(--warning))" },
+    { name: "In Progress", value: stats.inProgress, color: "hsl(var(--primary))" },
+    { name: "Resolved", value: stats.resolved, color: "hsl(var(--success))" },
+  ].filter(item => item.value > 0);
+
+  const COLORS = ["hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--warning))", "hsl(var(--destructive))"];
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -149,43 +168,117 @@ const AdminDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
-          <Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Complaints</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">{stats.total}</div>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">All time</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Open</CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.open}</div>
+              <div className="text-3xl font-bold text-orange-700 dark:text-orange-300">{stats.open}</div>
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Awaiting review</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900 border-yellow-200 dark:border-yellow-800">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.inProgress}</div>
+              <div className="text-3xl font-bold text-yellow-700 dark:text-yellow-300">{stats.inProgress}</div>
+              <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Being handled</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Resolved</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.resolved}</div>
+              <div className="text-3xl font-bold text-green-700 dark:text-green-300">{stats.resolved}</div>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                {stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}% completion
+              </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Analytics Dashboard */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-6">
+            <BarChart3 className="h-6 w-6" />
+            <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-2 mb-8">
+            {/* Status Distribution Pie Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Status Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={statusChartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {statusChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Category Distribution Bar Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Complaints by Category
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={chartCategoryData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
+                    <YAxis stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "hsl(var(--popover))", 
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "var(--radius)"
+                      }}
+                    />
+                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <h2 className="text-2xl font-bold mb-6">All Complaints</h2>
@@ -224,14 +317,18 @@ const AdminDashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="font-medium">{complaint.category}</span>
-                  <span>•</span>
-                  <span>{new Date(complaint.created_at).toLocaleDateString()}</span>
-                  <span>•</span>
-                  <span>{complaint.student_name}</span>
-                  <span>•</span>
-                  <span className="text-primary">ID: {complaint.id.slice(0, 8)}</span>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="font-medium">{complaint.category}</span>
+                    <span>•</span>
+                    <span>{new Date(complaint.created_at).toLocaleDateString()}</span>
+                    <span>•</span>
+                    <span className="text-primary">ID: {complaint.id.slice(0, 8)}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium text-foreground">{complaint.student_name}</span>
+                    <span className="text-muted-foreground"> • {complaint.student_email}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
