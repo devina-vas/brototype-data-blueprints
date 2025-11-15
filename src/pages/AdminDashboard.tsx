@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LogOut, AlertCircle, CheckCircle2, Clock, FileText, TrendingUp, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { ChartContainer } from "@/components/ui/chart";
 
 type ComplaintWithProfile = {
   id: string;
@@ -215,67 +216,162 @@ const AdminDashboard = () => {
 
         {/* Analytics Dashboard */}
         <div className="mb-8">
-          <div className="flex items-center gap-2 mb-6">
-            <BarChart3 className="h-6 w-6" />
-            <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b">
+            <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+              <BarChart3 className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
+              <p className="text-sm text-muted-foreground">Comprehensive complaint insights and trends</p>
+            </div>
           </div>
           
-          <div className="grid gap-6 md:grid-cols-2 mb-8">
+          <div className="grid gap-6 lg:grid-cols-2 mb-8">
             {/* Status Distribution Pie Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Status Distribution
-                </CardTitle>
+            <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow duration-300">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-md bg-gradient-to-br from-blue-500/10 to-purple-500/10">
+                    <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Status Distribution</CardTitle>
+                    <CardDescription className="text-xs">Current complaint status breakdown</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={statusChartData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {statusChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <ChartContainer
+                  config={{
+                    Open: {
+                      label: "Open",
+                      color: "hsl(var(--chart-1))",
+                    },
+                    "In Progress": {
+                      label: "In Progress",
+                      color: "hsl(var(--chart-2))",
+                    },
+                    Resolved: {
+                      label: "Resolved",
+                      color: "hsl(var(--chart-3))",
+                    },
+                  }}
+                  className="h-[280px]"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <defs>
+                        <linearGradient id="statusGradient1" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#f97316" stopOpacity={0.8}/>
+                          <stop offset="100%" stopColor="#ea580c" stopOpacity={0.9}/>
+                        </linearGradient>
+                        <linearGradient id="statusGradient2" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#eab308" stopOpacity={0.8}/>
+                          <stop offset="100%" stopColor="#ca8a04" stopOpacity={0.9}/>
+                        </linearGradient>
+                        <linearGradient id="statusGradient3" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8}/>
+                          <stop offset="100%" stopColor="#16a34a" stopOpacity={0.9}/>
+                        </linearGradient>
+                      </defs>
+                      <Pie
+                        data={statusChartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={90}
+                        innerRadius={50}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {statusChartData.map((entry, index) => {
+                          const gradients = ['url(#statusGradient1)', 'url(#statusGradient2)', 'url(#statusGradient3)'];
+                          return <Cell key={`cell-${index}`} fill={gradients[index % gradients.length]} stroke="hsl(var(--background))" strokeWidth={2} />;
+                        })}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                        }} 
+                      />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        iconType="circle"
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
               </CardContent>
             </Card>
 
-            {/* Category Distribution Bar Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Complaints by Category
-                </CardTitle>
+            {/* Complaints by Category Bar Chart */}
+            <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow duration-300">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-md bg-gradient-to-br from-emerald-500/10 to-teal-500/10">
+                    <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Complaints by Category</CardTitle>
+                    <CardDescription className="text-xs">Distribution across different categories</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartCategoryData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: "hsl(var(--popover))", 
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "var(--radius)"
-                      }}
-                    />
-                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <ChartContainer
+                  config={{
+                    count: {
+                      label: "Complaints",
+                      color: "hsl(var(--chart-4))",
+                    },
+                  }}
+                  className="h-[280px]"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartCategoryData}>
+                      <defs>
+                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9}/>
+                          <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0.7}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis 
+                        dataKey="name" 
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                        }}
+                        cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
+                      />
+                      <Bar 
+                        dataKey="count" 
+                        fill="url(#barGradient)" 
+                        radius={[8, 8, 0, 0]}
+                        maxBarSize={60}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
               </CardContent>
             </Card>
           </div>
