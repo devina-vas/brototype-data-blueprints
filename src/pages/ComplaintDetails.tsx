@@ -245,14 +245,14 @@ const ComplaintDetails = () => {
               {/* Student Information */}
               <div>
                 <h3 className="text-sm font-semibold mb-3">Student Information</h3>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Name:</span>
-                    <span className="text-sm text-muted-foreground">{complaint.student_name}</span>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                  <div>
+                    <span className="text-xs text-muted-foreground">Full Name:</span>
+                    <p className="text-base font-semibold">{complaint.student_name}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Email:</span>
-                    <span className="text-sm text-muted-foreground">{complaint.student_email}</span>
+                  <div>
+                    <span className="text-xs text-muted-foreground">Email Address:</span>
+                    <p className="text-base font-medium text-primary">{complaint.student_email}</p>
                   </div>
                 </div>
               </div>
