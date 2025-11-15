@@ -142,9 +142,11 @@ const NewComplaint = () => {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Technical">Technical</SelectItem>
-                    <SelectItem value="Infrastructure">Infrastructure</SelectItem>
-                    <SelectItem value="Behavior">Behavior</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="Mentor">Mentor</SelectItem>
+                    <SelectItem value="Academic Counsellor">Academic Counsellor</SelectItem>
+                    <SelectItem value="Working Hub">Working Hub</SelectItem>
+                    <SelectItem value="Peer">Peer</SelectItem>
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>

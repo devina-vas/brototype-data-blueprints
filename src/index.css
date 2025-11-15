@@ -44,6 +44,12 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    --chart-1: 25 95% 53%;
+    --chart-2: 48 96% 53%;
+    --chart-3: 142 76% 36%;
+    --chart-4: 217 91% 60%;
+    --chart-5: 280 80% 60%;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 20%;
     --sidebar-primary: 0 0% 5%;
@@ -88,6 +94,12 @@ All colors MUST be HSL.
     --border: 0 0% 20%;
     --input: 0 0% 20%;
     --ring: 0 0% 80%;
+
+    --chart-1: 25 95% 53%;
+    --chart-2: 48 96% 53%;
+    --chart-3: 142 76% 36%;
+    --chart-4: 217 91% 60%;
+    --chart-5: 280 80% 60%;
 
     --sidebar-background: 0 0% 8%;
     --sidebar-foreground: 0 0% 90%;
