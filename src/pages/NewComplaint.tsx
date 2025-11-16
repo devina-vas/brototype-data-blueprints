@@ -70,26 +70,28 @@ const NewComplaint = () => {
 
       if (error) throw error;
 
-      // Send email notification
-      try {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', user.id)
-          .maybeSingle();
+      // Send email notification in background (non-blocking)
+      (async () => {
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', user.id)
+            .maybeSingle();
 
-        await supabase.functions.invoke('send-notification', {
-          body: {
-            type: 'complaint_created',
-            studentEmail: user.email || '',
-            studentName: profileData?.name || 'Student',
-            complaintTitle: title,
-            complaintId: null
-          }
-        });
-      } catch (emailError) {
-        console.error("Failed to send email:", emailError);
-      }
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              type: 'complaint_created',
+              studentEmail: user.email || '',
+              studentName: profileData?.name || 'Student',
+              complaintTitle: title,
+              complaintId: null
+            }
+          });
+        } catch (emailError) {
+          console.error("Failed to send email:", emailError);
+        }
+      })();
 
       toast.success("Complaint submitted successfully!");
       navigate("/dashboard");

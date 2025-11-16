@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, AlertCircle, CheckCircle2, Clock, FileText, TrendingUp, BarChart3 } from "lucide-react";
+import { LogOut, AlertCircle, CheckCircle2, Clock, FileText, TrendingUp, BarChart3, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,7 @@ const AdminDashboard = () => {
   const { user, signOut } = useAuth();
   const [complaints, setComplaints] = useState<ComplaintWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchComplaints();
@@ -86,7 +87,14 @@ const AdminDashboard = () => {
       toast.error("Failed to load complaints");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchComplaints();
+    toast.success("Data refreshed successfully");
   };
 
   const handleLogout = async () => {
@@ -161,10 +169,20 @@ const AdminDashboard = () => {
               <p className="text-sm text-muted-foreground">Manage all complaints</p>
             </div>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -323,16 +341,21 @@ const AdminDashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <ChartContainer
-                  config={{
-                    count: {
-                      label: "Complaints",
-                      color: "hsl(var(--chart-4))",
-                    },
-                  }}
-                  className="h-[280px]"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
+                {chartCategoryData.length === 0 ? (
+                  <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                    No category data available
+                  </div>
+                ) : (
+                  <ChartContainer
+                    config={{
+                      value: {
+                        label: "Complaints",
+                        color: "hsl(var(--chart-4))",
+                      },
+                    }}
+                    className="h-[280px]"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartCategoryData}>
                       <defs>
                         <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
@@ -364,7 +387,7 @@ const AdminDashboard = () => {
                         cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
                       />
                       <Bar 
-                        dataKey="count" 
+                        dataKey="value" 
                         fill="url(#barGradient)" 
                         radius={[8, 8, 0, 0]}
                         maxBarSize={60}
@@ -372,6 +395,7 @@ const AdminDashboard = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
+                )}
               </CardContent>
             </Card>
           </div>
