@@ -3,6 +3,9 @@
 ## Project info
 
 **URL**: https://lovable.dev/projects/b9710097-d774-4b3f-954c-0b761f4b00d9
+**Admin Access :** email-id : *admin@brototype.com*
+                   password : *Admin123!*
+**Student Access :** end the email id with @brototype.com
 
 ## How can I edit this code?
 
